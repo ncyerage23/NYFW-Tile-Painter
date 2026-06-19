@@ -15,6 +15,10 @@
  * Right now, I just want a simple "canvas" in the middle, with everything set to black. If you click
  * on a tile, it swaps from black to white (or back). Then, on close, it'll print the output. That's all, for now. 
  *
+ *
+ * TODO: what I have rn works, which is good. But, for some reason, it's unreasonably slow. There's probably a few
+ * good reasons for that, but I haven't had problems like this ever. So...idk. Figure ts out. 
+ *
  */
 
 #include "NYFW/nyfw.h"
@@ -36,11 +40,12 @@ typedef struct {
 	NYFW_Canvas scr;
 } TileModule;
 
+TileModule tmod;
 
-TileModule tile_mod_init(NYFW_Canvas scr)
+
+int tile_mod_init(NYFW_Canvas scr)
 {
-	TileModule out;
-	out.scr = scr;
+	tmod.scr = scr;
 
 	/* ----- SCREEN DIMENSIONS ----- */
 	int sw = scr.width, 	sh = scr.height;		// screen dimensions
@@ -49,45 +54,42 @@ TileModule tile_mod_init(NYFW_Canvas scr)
 	/* ----- TILE RECTS ----- */
 	int rl_2 = pixel_size * 4;
 	int rl = rl_2 * 2;	// width of the tile
-
-	//int rl_2 = sh / 4;
-	//int rl = rl_2 * 2;	// width of the tile	
 	int rx = centerx - rl_2, 	ry = centery - rl_2;	// top-left corner of the tile
 	
-	out.tile_rect = (NYFW_Rect){ rx, ry, rl, rl };
+	tmod.tile_rect = (NYFW_Rect){ rx, ry, rl, rl };
 
 	/* ----- BORDER RECTS ----- */
 	int cvx = rx - border_len, 	cvy = ry - border_len;
 	int cvl = rl + 2 * border_len;
 
-	out.border_rects[0] = (NYFW_Rect){ cvx, cvy, cvl, border_len };				// top
-	out.border_rects[1] = (NYFW_Rect){ cvx, cvy+border_len+rl, cvl, border_len };		// bottom
-	out.border_rects[2] = (NYFW_Rect){ cvx, cvy+border_len, border_len, rl };			// left
-	out.border_rects[3] = (NYFW_Rect){ cvx+border_len+rl, cvy+border_len, border_len, rl };	// right
+	tmod.border_rects[0] = (NYFW_Rect){ cvx, cvy, cvl, border_len };				// top
+	tmod.border_rects[1] = (NYFW_Rect){ cvx, cvy+border_len+rl, cvl, border_len };			// bottom
+	tmod.border_rects[2] = (NYFW_Rect){ cvx, cvy+border_len, border_len, rl };			// left
+	tmod.border_rects[3] = (NYFW_Rect){ cvx+border_len+rl, cvy+border_len, border_len, rl };	// right
 
 	// TODO: add a text thing at the top
 	
 
 	/* ------ PIXEL ARRAY ----- */
 	for (int i = 0; i < 64; i++)
-		out.pixels[i] = 0x0000;
+		tmod.pixels[i] = 0x0000;
 	
 	/* ----- PIXEL RECTS ----- */
 	for (int i = 0; i < 8; i++)
 		for (int j = 0; j < 8; j++)
-			out.pixel_rects[j * 8 + i] = (NYFW_Rect){ rx + i * pixel_size, ry + j * pixel_size, pixel_size, pixel_size };
+			tmod.pixel_rects[j * 8 + i] = (NYFW_Rect){ rx + i * pixel_size, ry + j * pixel_size, pixel_size, pixel_size };
 	
-	return out;
+	return 1;
 }
 
 
-void tile_mod_draw(TileModule t)
+void tile_mod_draw()
 {
 	for (int i = 0; i < 4; i++)
-		nyfw_canvasFill(t.scr, LBLUE, &t.border_rects[i]);
+		nyfw_canvasFill(tmod.scr, LBLUE, &tmod.border_rects[i]);
 
 	for (int i = 0; i < 64; i++)
-		nyfw_canvasFill(t.scr, t.pixels[i], &t.pixel_rects[i]);
+		nyfw_canvasFill(tmod.scr, tmod.pixels[i], &tmod.pixel_rects[i]);
 }
 
 
@@ -97,13 +99,22 @@ void tile_mod_draw(TileModule t)
 
 
 /* ----- INIT/CLOSE ----- */
+NYFW_Canvas scr;
+
 int setup()
 {
 	if (!nyfw_windowInit()) return 0;
+	scr = nyfw_getWindowCanvas();
 
 	if (!nyfw_inputInit(INPUT_MOUSE | INPUT_KEYS)) { 
 		nyfw_windowClose();
 		return 0; 
+	}
+
+	if (!tile_mod_init(scr)) {
+		nyfw_inputClose();
+		nyfw_windowClose();
+		return 0;
 	}
 }
 
@@ -117,19 +128,39 @@ void shutdown()
 
 
 /* ----- MAIN ----- */
+
+// mouse
+int mx = 0, my = 0;
+
+void draw_mouse()
+{
+	nyfw_canvSetPixel(scr, mx, my, 0xffff); 
+}
+
+
 int main() 
 {
 	if (!setup()) return 1;
 	
-	NYFW_Canvas scr = nyfw_getWindowCanvas();
-	TileModule tmod = tile_mod_init(scr);
-	
 	nyfw_canvasClear(scr);
-	tile_mod_draw(tmod);
-	nyfw_windowPresent();
 
-	sleep(3);
+	while (1) {
+		nyfw_inputPoll();
+		
+		// update (TODO: make this a separate function)
+		if (nyfw_inputKeyPressed(NYFW_KEY_ESC)) break;
 
+		mx += nyfw_inputMouseDX();
+		my += nyfw_inputMouseDY();
+
+		// draw
+		nyfw_canvasClear(scr);
+		tile_mod_draw();
+		draw_mouse();
+
+		// present
+		nyfw_windowPresent();
+	}
 
 	shutdown();
 	return 0;
