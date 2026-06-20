@@ -5,19 +5,12 @@
  * my 2D games. It'll initially be pretty rigid, but I'll add more functionality as I go
  * (and as I need it). 
  *
- * I'm thinking I'll take some design points from NeoVim herself, specifically that whole
- * "modal" outlook, and the typed commands. Instead of some UI that could take millennia to write. 
+ * So, this version works! It might possibly be incredibly slow, but I can't really tell. 
+ * Either way, it does work. Next step: saving to .nymg, then maybe palette module or 
+ * the command-line commands (like ./tilepainter poo.nymg or something). Or text commands (ugh). 
  *
- * Also from nvim (and many others) I want to figure out how to make it a lil command-line command. And,
- * following that, the command-line input stuff (for example: nvim main.c include/game.h) so I can do more
- * fun stuff. 
- *
- * Right now, I just want a simple "canvas" in the middle, with everything set to black. If you click
- * on a tile, it swaps from black to white (or back). Then, on close, it'll print the output. That's all, for now. 
- *
- *
- * TODO: what I have rn works, which is good. But, for some reason, it's unreasonably slow. There's probably a few
- * good reasons for that, but I haven't had problems like this ever. So...idk. Figure ts out. 
+ * One thing. I think the input system might be super janky. Same with the window one. NYFW might be janky. 
+ * So, another thing to figure out. TODO: try to allow for ^C quitting. 
  *
  */
 
@@ -93,6 +86,20 @@ void tile_mod_draw()
 }
 
 
+#define IN_RECT(r, x, y)	((r).x <= (x) && (r).y <= (y) && (x) < (r).x + (r).w && (y) < (r).y + (r).h) ? 1 : 0
+
+void tile_check_input(int x, int y)
+{
+	if (!IN_RECT(tmod.tile_rect, x, y)) return;
+	
+
+	for (int i = 0; i < 64; i++) {
+		if (IN_RECT(tmod.pixel_rects[i], x, y)) {
+			tmod.pixels[i] = ~tmod.pixels[i];
+			break;
+		}
+	}
+}
 
 
 
@@ -130,11 +137,19 @@ void shutdown()
 /* ----- MAIN ----- */
 
 // mouse
-int mx = 0, my = 0;
+int mx = 10, my = 10;
+int mspeedx = 5, mspeedy = 4;
 
 void draw_mouse()
 {
-	nyfw_canvSetPixel(scr, mx, my, 0xffff); 
+	// nyfw_canvSetPixel(scr, mx, my, 0xffff); 
+	
+	CANV_PIXEL(scr, mx, my) = 0xffff;
+	CANV_PIXEL(scr, mx-1, my) = 0xffff;
+	CANV_PIXEL(scr, mx+1, my) = 0xffff;
+	CANV_PIXEL(scr, mx, my-1) = 0xffff;
+	CANV_PIXEL(scr, mx, my+1) = 0xffff;
+
 }
 
 
@@ -142,7 +157,7 @@ int main()
 {
 	if (!setup()) return 1;
 	
-	nyfw_canvasClear(scr);
+	int sw = scr.width, sh = scr.height;
 
 	while (1) {
 		nyfw_inputPoll();
@@ -150,8 +165,13 @@ int main()
 		// update (TODO: make this a separate function)
 		if (nyfw_inputKeyPressed(NYFW_KEY_ESC)) break;
 
-		mx += nyfw_inputMouseDX();
-		my += nyfw_inputMouseDY();
+		mx += nyfw_inputMouseDX() * mspeedx;
+		my += nyfw_inputMouseDY() * mspeedy;
+		
+		mx = MAX(5, MIN(mx, sw-5));
+		my = MAX(5, MIN(my, sh-5));
+
+		if (nyfw_inputMBPressed(NYFW_MB_L)) tile_check_input(mx, my);
 
 		// draw
 		nyfw_canvasClear(scr);
@@ -160,6 +180,12 @@ int main()
 
 		// present
 		nyfw_windowPresent();
+	}
+	
+	for (int j = 0; j < 8; j++) {
+		for (int i = 0; i < 8; i++)
+			printf("%X\t", tmod.pixels[j * 8 + i]);
+		printf("\n");
 	}
 
 	shutdown();
