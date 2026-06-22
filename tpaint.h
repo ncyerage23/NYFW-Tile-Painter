@@ -12,9 +12,13 @@
 #include "NYFW/nyfw.h"
 #include <stdio.h>
 
+#define IN_RECT(r, x, y)	((r).x <= (x) && (r).y <= (y) && (x) < (r).x + (r).w && (y) < (r).y + (r).h) ? 1 : 0
+
+
 /* ----- GLOBALS ----- */
 extern NYFW_Canvas tile;
 extern char file_path[256];
+extern uint16_t current_color;
 
 
 /* ----- TILE MODULE ----- */
@@ -28,5 +32,11 @@ NYFW_Canvas get_tile();
 int init_file(const char* arg);
 void save_file();
 void free_tile();
+
+
+/* ----- PALETTE MODULE ----- */
+int palette_mod_init(NYFW_Canvas scr);
+void palette_mod_draw();
+void palette_check_input(int x, int y);
 
 #endif

@@ -44,6 +44,13 @@ int setup(const char* arg)
 		nyfw_windowClose();
 		return 0;
 	}
+
+	if (!palette_mod_init(scr)) {
+		free_tile();
+		nyfw_inputClose();
+		nyfw_windowClose();
+		return 0;
+	}
 }
 
 void shutdown()
@@ -87,18 +94,11 @@ void draw_mouse()
 
 int main(int argc, char* argv[]) 
 {
-	// TODO: okay. This is basically good, minus the lack of colors. That'll come in a minute. 
-	// Here's the plan. I'm gonna use command-line arguments for the file being edited. If the file exists, 
-	// then we open the .nymg (unless it's not 8x8, I guess) and allow editing. If it doesn't, we start blank, 
-	// and on close, save it to that name. 
-	
-	if (argc <= 1) {
-		printf("no arg\n");
-		return 1;
-	}
+	const char* arg;
+	if (argc <= 1) arg = "";
+	else arg = argv[1];
 
-	if( !setup(argv[1]) ) return 1;
-
+	if( !setup(arg) ) return 1;
 	
 	int sw = scr.width, sh = scr.height;
 	nyfw_canvasClear(scr);
@@ -112,12 +112,15 @@ int main(int argc, char* argv[])
 		int mdx = (float)nyfw_inputMouseDX() * m_sensitivity_x;
 		int mdy = (float)nyfw_inputMouseDY() * m_sensitivity_y;
 
-		if (nyfw_inputMBPressed(NYFW_MB_L)) tile_check_input(mx, my);
+		if (nyfw_inputMBPressed(NYFW_MB_L)) {
+			tile_check_input(mx+mdx, my+mdy);
+			palette_check_input(mx+mdx, my+mdy);
+		}
 
 		// draw (TODO: make this also a separate function)
-		// nyfw_canvasClear(scr);
 		undraw_mouse();
 		tile_mod_draw();
+		palette_mod_draw();
 		mx += mdx;
 		my += mdy;
 		draw_mouse();

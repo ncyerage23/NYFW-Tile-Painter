@@ -26,6 +26,16 @@ char filename[256];
 
 int init_file(const char* arg)
 {
+	if (strlen(arg) == 0) {
+		strcat(filename, "default.nymg");
+		strcat(file_path, "gallery/");
+		strcat(file_path, filename);
+
+		uint16_t* pixels = malloc(128);
+		tile = nyfw_canvas(pixels, 8, 8, 8);
+		return 1;
+	}
+	
 	strcat(filename, arg);
 	strcat(file_path, "gallery/");
 	
@@ -40,11 +50,7 @@ int init_file(const char* arg)
 
 	strcat(file_path, filename);
 
-	if (nyfw_loadNYMG(&tile, file_path)) {
-		printf("found file!\n");
-	}
-	else {
-		printf("no file found. creating %s\n", filename);
+	if (!nyfw_loadNYMG(&tile, file_path)) {
 		uint16_t* pixels = malloc(128);
 		tile = nyfw_canvas(pixels, 8, 8, 8);
 	}

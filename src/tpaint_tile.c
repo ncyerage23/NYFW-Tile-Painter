@@ -74,7 +74,6 @@ void tile_mod_draw()
 }
 
 
-#define IN_RECT(r, x, y)	((r).x <= (x) && (r).y <= (y) && (x) < (r).x + (r).w && (y) < (r).y + (r).h) ? 1 : 0
 
 void tile_check_input(int x, int y)
 {
@@ -83,7 +82,7 @@ void tile_check_input(int x, int y)
 
 	for (int i = 0; i < 64; i++) {
 		if (IN_RECT(tmod.pixel_rects[i], x, y)) {
-			tile.pixels[i] = ~tmod.pixels[i];
+			tile.pixels[i] = current_color;
 			break;
 		}
 	}
