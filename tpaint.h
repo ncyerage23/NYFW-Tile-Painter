@@ -12,6 +12,10 @@
 #include "NYFW/nyfw.h"
 #include <stdio.h>
 
+/* ----- GLOBALS ----- */
+extern NYFW_Canvas tile;
+extern char file_path[256];
+
 
 /* ----- TILE MODULE ----- */
 int tile_mod_init(NYFW_Canvas scr);
@@ -20,5 +24,9 @@ void tile_check_input(int x, int y);
 NYFW_Canvas get_tile();
 
 
+/* ----- FILE MODULE ----- */
+int init_file(const char* arg);
+void save_file();
+void free_tile();
 
 #endif

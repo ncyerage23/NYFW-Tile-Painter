@@ -17,7 +17,7 @@ typedef struct {
 	NYFW_Rect pixel_rects[64]; 	// rects for each pixel
 	NYFW_Rect border_rects[4];	// rects for drawing the border
 
-	uint16_t pixels[64];		// pixel values
+	uint16_t pixels[64];	// gonna remove this
 
 	NYFW_Canvas scr;
 } TileModule;
@@ -70,7 +70,7 @@ void tile_mod_draw()
 		nyfw_canvasFill(tmod.scr, LBLUE, &tmod.border_rects[i]);
 
 	for (int i = 0; i < 64; i++)
-		nyfw_canvasFill(tmod.scr, tmod.pixels[i], &tmod.pixel_rects[i]);
+		nyfw_canvasFill(tmod.scr, tile.pixels[i], &tmod.pixel_rects[i]);
 }
 
 
@@ -83,7 +83,7 @@ void tile_check_input(int x, int y)
 
 	for (int i = 0; i < 64; i++) {
 		if (IN_RECT(tmod.pixel_rects[i], x, y)) {
-			tmod.pixels[i] = ~tmod.pixels[i];
+			tile.pixels[i] = ~tmod.pixels[i];
 			break;
 		}
 	}

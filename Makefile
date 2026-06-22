@@ -2,7 +2,7 @@
 #
 
 BDIR=build
-OBJ=build/main.o build/tile_module.o
+OBJ=build/main.o build/tile_module.o build/file_module.o
 
 tpaint: $(OBJ)
 	gcc $(OBJ) -lnyfw -o $@
@@ -14,6 +14,9 @@ $(BDIR)/main.o: src/main.c | $(BDIR)
 	gcc -c $< -o $@
 
 $(BDIR)/tile_module.o: src/tile_module.c | $(BDIR)
+	gcc -c $< -o $@
+
+$(BDIR)/file_module.o: src/file_module.c | $(BDIR)
 	gcc -c $< -o $@
 
 clean:

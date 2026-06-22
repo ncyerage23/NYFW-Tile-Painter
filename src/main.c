@@ -17,21 +17,29 @@
 #include "tpaint.h"
 #include <unistd.h>
 
-
-/* ----- INIT/CLOSE ----- */
+NYFW_Canvas tile;
 NYFW_Canvas scr;
 
-int setup()
+
+/* ----- INIT/CLOSE ----- */
+int setup(const char* arg)
 {
-	if (!nyfw_windowInit()) return 0;
+	if ( !init_file(arg) ) return 0;	
+
+	if (!nyfw_windowInit()) {
+		free_tile();
+		return 0;
+	}
 	scr = nyfw_getWindowCanvas();
 
 	if (!nyfw_inputInit(INPUT_MOUSE | INPUT_KEYS)) { 
+		free_tile();
 		nyfw_windowClose();
 		return 0; 
 	}
 
 	if (!tile_mod_init(scr)) {
+		free_tile();
 		nyfw_inputClose();
 		nyfw_windowClose();
 		return 0;
@@ -40,6 +48,7 @@ int setup()
 
 void shutdown()
 {
+	save_file();
 	nyfw_inputClose();
 	nyfw_windowClose();
 }
@@ -82,11 +91,14 @@ int main(int argc, char* argv[])
 	// Here's the plan. I'm gonna use command-line arguments for the file being edited. If the file exists, 
 	// then we open the .nymg (unless it's not 8x8, I guess) and allow editing. If it doesn't, we start blank, 
 	// and on close, save it to that name. 
+	
+	if (argc <= 1) {
+		printf("no arg\n");
+		return 1;
+	}
 
+	if( !setup(argv[1]) ) return 1;
 
-	if (argc > 1) printf("%s\n", argv[1]);
-
-	if (!setup()) return 1;
 	
 	int sw = scr.width, sh = scr.height;
 	nyfw_canvasClear(scr);
@@ -114,8 +126,6 @@ int main(int argc, char* argv[])
 		nyfw_windowPresent();
 	}
 
-	NYFW_Canvas out = get_tile();
-	nyfw_saveNYMG(out, "gallery/poo.nymg");
 
 	shutdown();
 	return 0;
